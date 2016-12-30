@@ -1,0 +1,269 @@
+---
+title: "Exploratory Data Analysis Capstone"
+author: "Sergios Koutavidis"
+date: "21 November 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set( message=FALSE)
+```
+
+## Capstone Project Exploratory Data Analysis
+
+#Synopsis
+
+Goal of this report is to set an Exploratory Analysis of the three datasets provided and understand the distribution of words. Several metrics should be presented along with graphs indicating frequency of word and word pairs. 
+
+
+#Loading Libraries
+
+```{r cars}
+library(tm)
+library(ggplot2)
+library(data.table)
+library(NLP)
+```
+
+#Collect basic metrics like the size , lines and number of words
+
+```{r pressure}
+#Set 
+setwd("~/coursera/capstone/final/en_US")
+
+blogs.file <- "en_US.blogs.txt"
+news.file <- "en_US.news.txt"
+twitter.file <- "en_US.twitter.txt"
+
+con <- file(news.file, "rb")
+news <- readLines(con, encoding = "UTF-8", skipNul = T, warn = F)
+close(con)
+
+con <- file(blogs.file, "rb")
+blogs <- readLines(con, encoding = "UTF-8", skipNul = T, warn = F)
+close(con)
+
+con <- file(twitter.file, "rb")
+twitter <- readLines(con, encoding = "UTF-8", skipNul = T, warn = F)
+close(con)
+
+news.size <- file.info(news.file)$size
+blogs.size <- file.info(blogs.file)$size
+twitter.size <- file.info(twitter.file)$size
+
+news.words <- sum(sapply(gregexpr("\\S+", news), length))
+blogs.words <- sum(sapply(gregexpr("\\S+", blogs), length))
+twitter.words <- sum(sapply(gregexpr("\\S+", twitter), length))
+
+
+data.frame(filename = c("Blogs", "News", "Twitter"), 
+           size = c(blogs.size, news.size, twitter.size),
+           lines = c(length(blogs), length(news), length(twitter)),
+           words = c(blogs.words, news.words, twitter.words))
+
+
+
+```
+
+#Create Sample Data Files and concatenate datasets 
+
+Dataset is too big to work with and we'll derive sample data from these datasets. 
+
+```{r sample,warning=FALSE}
+subset_data <- function(infile,outfile,k,header=T) {
+  ci <- file(infile,"r")
+  co <- file(outfile,"w")
+  if (header) {
+    hdr <- readLines(ci,n=1)
+    writeLines(hdr,co)
+  }
+  recnum = 0
+  numout = 0
+  while (TRUE) {
+    inrec <- readLines(ci,n=1)
+    if (length(inrec) == 0) { # end of file?
+      close(co) 
+      return(numout)
+    }
+    recnum <- recnum + 1
+    if (recnum %% k == 0) {
+      numout <- numout + 1
+      writeLines(inrec,co)
+    }
+  }
+}
+#Call this function to create relevant sample files 
+
+subset_data(blogs.file, 'en_US.blogs.subset.txt', 100, F)
+subset_data(news.file, 'en_US.news.subset.txt', 100, F)
+subset_data(twitter.file, 'en_US.twitter.subset.txt', 100, F)
+
+#Finally load these files and merge them into one dataset 
+
+Blog_dataset <- read.csv2(file = 'en_US.blogs.subset.txt', stringsAsFactors = FALSE, header = FALSE, quote = "")
+News_dataset <- read.csv2(file = 'en_US.news.subset.txt', stringsAsFactors = FALSE, header = FALSE, quote = "")
+Twitter_dataset <- read.csv2(file = 'en_US.twitter.subset.txt', stringsAsFactors = FALSE, header = FALSE, quote = "")
+
+Final_dataset<-vector('character');
+Final_dataset<-c(Final_dataset,Blog_dataset);
+Final_dataset<-c(Final_dataset,News_dataset);
+Final_dataset<-c(Final_dataset,Twitter_dataset);
+
+```
+
+
+#Text Transformation
+```{r transform}
+
+# get a list of profane words
+con <- url("http://www.bannedwordlist.com/lists/swearWords.txt", "r")
+profane.words <- readLines(con, warn = F)
+close(con) 
+
+
+#Create Corpus and begin transformations 
+
+Corpus<-VCorpus(VectorSource(Final_dataset));
+Corpus <- tm_map(Corpus, removePunctuation);
+Corpus <- tm_map(Corpus, stripWhitespace);
+Corpus <- tm_map(Corpus, removeNumbers);
+Corpus <- tm_map(Corpus, stemDocument);
+Corpus <- tm_map(Corpus, removeWords, profane.words);
+Corpus <- tm_map(Corpus, PlainTextDocument);
+Corpus <- tm_map(Corpus, removeWords, c(stopwords("english"), "dont", "didnt",
+                                      "wasnt", "wont", "werent", "wouldnt",
+                                      "cant", "aint", "doesnt", "lets", "isnt",
+                                      "shouldnt", "arent"));
+
+
+
+```
+
+# A term document Matrix has to be created 
+
+```{r term}
+ TDM_Corpus <- TermDocumentMatrix(Corpus)
+
+
+```
+
+# Analysis of word counts and histograms based on the frequency of the appearance 
+
+Since we created the TermDocumentMatrix we order the words based on the appearance and we show relevant plots 
+Top 40 words are presented from the datasets of twitter, news and blogs after processing and removing unesessary words. 
+
+```{r termanalysis, results="hide"}
+TDM_Corpus.common <- removeSparseTerms(TDM_Corpus, .999)
+dim(TDM_Corpus.common)
+frequency <- rowSums(as.matrix((TDM_Corpus.common)))
+ord <- order(frequency)
+frequency[head(ord)]
+frequency[tail(ord, n = 40)]
+word_Freq <- frequency[tail(ord, n = 40)]
+commonTerms <- Terms(TDM_Corpus.common)
+
+word_Freq <- as.data.frame(word_Freq)
+word_Freq <- setDT(word_Freq, keep.rownames = TRUE)
+word_Freq <- word_Freq[order(word_Freq, decreasing = TRUE),]
+ 
+
+```
+Top 40 single words are presented 
+
+```{r top words}
+# plot 30 most frequent words
+s <- ggplot(word_Freq, aes(reorder(rn, word_Freq), word_Freq))
+  
+s <- s + geom_bar(stat = "identity", fill=heat.colors(40) ,colour="black")
+s <- s + coord_flip()
+s <- s + ggtitle("Word Frequency of single words")
+s <- s + ylab("Frequency")
+s <- s + xlab ("Single Words")
+s
+
+```
+
+Next step is to create similar plots for biagrams and triagrams.NLP package will be used for this scope
+
+```{r token}
+
+Bigram <-
+  function(x)
+    unlist(lapply(ngrams(words(x), 2), paste, collapse = " "), use.names = FALSE)
+
+Trigram <-
+  function(x)
+    unlist(lapply(ngrams(words(x), 3), paste, collapse = " "), use.names = FALSE)
+
+```
+
+Tokenizer function has been applied to transform data and present the relevant top 40 plots for the 
+sequence of 2 adjacent words
+
+```{r biagrams, results="hide"}
+TDM_Corpus.bigrams <- TermDocumentMatrix(Corpus, control = list(tokenize = Bigram))
+TDM_Corpus.bigrams.common <- removeSparseTerms(TDM_Corpus.bigrams, .999)
+dim(TDM_Corpus.bigrams.common)
+frequency.bigrams <- rowSums(as.matrix((TDM_Corpus.bigrams.common)))
+ord <- order(frequency.bigrams)
+frequency.bigrams[head(ord)]
+frequency.bigrams[tail(ord, n = 40)]
+word_Freq_Bigram <- frequency.bigrams[tail(ord, n = 40)]
+
+word_Freq_Bigram  <- as.data.frame(word_Freq_Bigram )
+word_Freq_Bigram <- setDT(word_Freq_Bigram, keep.rownames = TRUE)
+word_Freq_Bigram <- word_Freq_Bigram[order(word_Freq_Bigram, decreasing = TRUE),]
+```
+
+Top 40 words are presented through a sequence of 2 adjacent words
+
+```{r bigram plot}
+b <- ggplot(word_Freq_Bigram, aes(reorder(rn, word_Freq_Bigram), word_Freq_Bigram))
+ 
+b <- b + geom_bar(stat = "identity", fill=heat.colors(40) ,colour="black")
+b <- b + coord_flip()
+b <- b + ggtitle("Frequency or 2-grams")
+b <- b + ylab("Frequency")
+b <- b + xlab ("Bigram")
+b
+```
+
+Tokenizer function has been applied to transform data and present the relevant top 40 plots for the 
+sequence of 3 adjacent words
+
+```{r trigrams, results="hide"}
+TDM_Corpus.trigrams <- TermDocumentMatrix(Corpus, control = list(tokenize = Trigram))
+TDM_Corpus.trigrams.common <- removeSparseTerms(TDM_Corpus.trigrams, .999)
+dim(TDM_Corpus.trigrams.common)
+frequency.trigrams <- rowSums(as.matrix((TDM_Corpus.trigrams.common)))
+ord <- order(frequency.trigrams)
+frequency.trigrams[head(ord)]
+frequency.trigrams[tail(ord, n = 40)]
+word_Freq_Trigram <- frequency.trigrams[tail(ord, n = 40)]
+
+word_Freq_Trigram  <- as.data.frame(word_Freq_Trigram )
+word_Freq_Trigram <- setDT(word_Freq_Trigram, keep.rownames = TRUE)
+word_Freq_trigram <- word_Freq_Trigram[order(word_Freq_Trigram, decreasing = TRUE),]
+```
+
+Top 40 words are presented through a sequence of 3 adjacent words
+
+```{r trigram plot}
+t <- ggplot(word_Freq_Trigram, aes(reorder(rn, word_Freq_Trigram), word_Freq_Trigram))
+ 
+t <- t + geom_bar(stat = "identity", fill=heat.colors(40) ,colour="black")
+t <- t + coord_flip()
+t <- t + ggtitle("Frequency of 3-grams")
+t <- t + ylab("Frequency")
+t <- t + xlab ("Trigram")
+t
+```
+
+#Next Steps
+
+This analysis of the most commongly used words and word pairs give us a sense of the frequency of these words by combining these datasets. We could present frequencies of each of those datasets by following similar steps but it wouldn't provide us any additional insight. Next steps include the implementation of the prediction model along with the ShinY App itself. 
+
+#Prediction Model
+
+Prediction Model should be based on this Coprus hence every word provided (as user types), will be compared with this Coprus and a relevant word will be suggested based on the frequency. 
+
