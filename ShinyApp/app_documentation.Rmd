@@ -1,0 +1,22 @@
+
+
+## Scope of this Application
+
+This application was designed to predict next word based on information typed by user. An expression is provided and the prediction algorithm shows what the next work should be. This application is the final stage of the [Johns Hopkins Coursera Data Science Specialization] specialization. This Capstone project was designed in cooperation with SwiftKey. 
+
+
+## How this application works
+
+<ol>
+<li> There is a text input field where user types an input phrase which may be a single word or multiple words 
+<li> While typing any expression, on the right side there are 2 panels. The top right panel indicates which is the most probable word , highlighted in blue while right below that panel a bar chart is showing more probable words ordered by probability
+<li> User has the ability to select through a slider how many words want to be shown within bar chart. The maximum number of visible words , defined by user, is 10.
+<li> In cases where the next prediction is not an actual string but a number or year , a "NUM" or "YEAR" text has been assigned to those values respectively. 
+</ol>
+
+## Prediction Model and cleansing tasks 
+
+Depending on the number of words provided into text input, a different tokenized n-gram is selected to predict next word. For this application n-grams vary from 1-4 meaning that when 2 words are given , 3-gram model is activated however 4-gram model predicts the next word when 3 or more words are typed. These models are stored separately into 4 different files and are based on the initial US data file provided by SwiftKey. Due to the extensive size of these datasets, a function takes the maximum available subset of these files in order to be able to be further processed. Before the creation of the prediction model, data had be to be cleaned up, remove punctuation along with non-English characters or spaces. Lastly a profanity list from a website  was used to exclude words that shouldn't be appeared. 
+
+## Links
+
