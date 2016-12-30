@@ -2,6 +2,7 @@
 ========================================================
 author: Sergios Koutavidis
 date: 29/12/2016
+ 
 
 Scope of this presentation is to describe the way this predictive application works and what options users have. 
 
@@ -31,8 +32,9 @@ Designing of this solution
 
 Screenshots
 ========================================================
-![alt text](results.png)
-![alt text](filter.png)
+autosize: true
+![alt text](final.png)
+
 
  
 ***
@@ -47,9 +49,11 @@ Below screensot shows the input field where sentences are typed along with the s
 
 
 
-References
+Additional information 
 ========================================================
+This app is hosted on [ShinyApps.io](https://sergiosck.shinyapps.io/Word_Predict_Final/). 
 
-```{r, echo=FALSE}
-plot(cars)
-```
+App files (ui.R and Server.R), n-grams files used in the app and rest of R script can be found at [GitHub](https://github.com/sergiosk/Coursera-Data-Science-Capstone-Project).
+
+R Presentation is available at [RPubs](http://rpubs.com/sergiosck/238414).
+
