@@ -1,0 +1,55 @@
+  Coursera Data Science Capstone Project 
+========================================================
+author: Sergios Koutavidis
+date: 29/12/2016
+
+Scope of this presentation is to describe the way this predictive application works and what options users have. 
+
+This is the final assignment for the Capstone project of Data Science Specialization 
+
+How this application works 
+========================================================
+- Application is divided into 2 sections , left section and right section. Within left section user types a single word or a sentence
+- They have the ability to selet how many words will be predicted (up to 10) through a silder. Default value is 4
+- Regardless of the slider bar , the word with the bigger probability is shown in top right section , highlighted in blue
+- Above this , a bar chart shows all the words (depending on the slider bar selection) that have probability to be shown ordered respectively. 
+
+
+
+Designing of this solution 
+========================================================
+
+- US Dataset provided had to cleaned up , punctuation , special characters and non-English characters had to be removed
+- All words should be presented in lowercase while numbers and years should be categorized properly. 
+- A list of profanity words was used from a website to remove these appropriate words
+- The full dataset was too big to be fully processed hence the biggest available subset was selected through R functions
+- Next step involves tokenization and creation of n-grams 
+- Based on our model design , 4 n-grams have been created that predict words according to the number of words typed. 
+
+
+
+
+Screenshots
+========================================================
+![alt text](results.png)
+![alt text](filter.png)
+
+ 
+***
+This is a screenshot of the application showing the input field, slider and bar chart indicating the predicted word ordered by probability.
+
+Above screenshot is the result section where the word with the highest probability is shown along with the bar chart 
+
+Below screensot shows the input field where sentences are typed along with the slider that determines the number of words that will be shown in the bar chart. 
+
+  
+
+
+
+
+References
+========================================================
+
+```{r, echo=FALSE}
+plot(cars)
+```
